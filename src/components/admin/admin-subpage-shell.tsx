@@ -10,6 +10,8 @@ export const adminSubpages = [
   { href: "/admin/courses", label: "Khoá học" },
   { href: "/admin/enrollments", label: "Ghi danh" },
   { href: "/admin/invoices", label: "Hóa đơn" },
+  { href: "/admin/requests", label: "Yêu cầu học viên" },
+  { href: "/admin/notifications", label: "Thông báo" },
   { href: "/admin/leads", label: "Lead CRM" },
 ] as const;
 

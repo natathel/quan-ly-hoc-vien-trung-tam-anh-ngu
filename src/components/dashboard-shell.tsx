@@ -100,6 +100,8 @@ const adminModules = [
   { title: "Khoá học", href: "/admin/courses", description: "Theo dõi lớp mở, lịch học và công suất.", accent: "text-violet-300" },
   { title: "Ghi danh", href: "/admin/enrollments", description: "Kiểm soát ghi danh và trạng thái thanh toán.", accent: "text-amber-300" },
   { title: "Hóa đơn", href: "/admin/invoices", description: "Theo dõi chứng từ, công nợ và hạn thanh toán.", accent: "text-rose-300" },
+  { title: "Yêu cầu học viên", href: "/admin/requests", description: "Xử lý ticket đổi lớp, lịch học, học phí và hỗ trợ học vụ.", accent: "text-fuchsia-300" },
+  { title: "Thông báo", href: "/admin/notifications", description: "Điều phối announcement theo audience, priority và API vận hành.", accent: "text-lime-300" },
   { title: "Lead tuyển sinh", href: "/admin/leads", description: "Bảng CRM minh hoạ cho lead từ landing page và marketing.", accent: "text-cyan-300" },
 ] as const;
 

@@ -1,6 +1,11 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "english-center-leads-"));
 process.env.NODE_ENV = "test";
+process.env.SQLITE_PATH = path.join(tempRoot, "test.db");
 
 const { resetDatabaseForTests } = await import("@/lib/database");
 const { GET, POST } = await import("./route");

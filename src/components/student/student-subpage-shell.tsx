@@ -3,11 +3,12 @@ import type { ReactNode } from "react";
 
 import { PortalNav } from "@/components/shared/portal-nav";
 
-const studentSubpages = [
+export const studentSubpages = [
   { href: "/student", label: "Tổng quan" },
   { href: "/student/schedule", label: "Lịch học" },
   { href: "/student/assessments", label: "Đánh giá" },
   { href: "/student/payments", label: "Thanh toán" },
+  { href: "/student/requests", label: "Yêu cầu hỗ trợ" },
 ] as const;
 
 type StudentSubpageShellProps = {

@@ -9,6 +9,7 @@ import type {
   DashboardStats,
   Enrollment,
   Invoice,
+  Notification,
   OperationalSummary,
   Session,
   Student,
@@ -22,6 +23,7 @@ type StudentPortalProps = {
   assessments: Assessment[];
   assessmentScores: AssessmentScore[];
   invoices: Invoice[];
+  notifications: Notification[];
   stats: DashboardStats;
   summary: OperationalSummary;
 };
@@ -54,6 +56,18 @@ const paymentLabel: Record<Enrollment["paymentStatus"], string> = {
   unpaid: "Chưa thanh toán",
 };
 
+const notificationPriorityLabel: Record<Notification["priority"], string> = {
+  normal: "Thông tin",
+  high: "Ưu tiên cao",
+  critical: "Khẩn",
+};
+
+const notificationPriorityClass: Record<Notification["priority"], string> = {
+  normal: "border-sky-500/20 bg-sky-500/10 text-sky-100",
+  high: "border-amber-500/20 bg-amber-500/10 text-amber-100",
+  critical: "border-rose-500/20 bg-rose-500/10 text-rose-100",
+};
+
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -67,6 +81,16 @@ function formatScore(value?: number) {
   return Number.isInteger(value) ? `${value}` : value.toFixed(1);
 }
 
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isStudentVisibleNotification(notification: Notification, today = todayIso()) {
+  return (notification.audience === "all" || notification.audience === "students")
+    && notification.publishedAt <= today
+    && (!notification.expiresAt || notification.expiresAt >= today);
+}
+
 export function StudentPortal({
   students,
   enrollments,
@@ -75,6 +99,7 @@ export function StudentPortal({
   assessments,
   assessmentScores,
   invoices,
+  notifications,
   stats,
   summary,
 }: StudentPortalProps) {
@@ -105,6 +130,7 @@ export function StudentPortal({
   const careItems = student
     ? summary.studentCareList.filter((item) => item.studentId === student.id)
     : [];
+  const studentNotifications = notifications.filter((notification) => isStudentVisibleNotification(notification));
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
@@ -210,13 +236,47 @@ export function StudentPortal({
             </div>
           </SectionCard>
 
-          <SectionCard title="Yêu cầu nhanh" description="Các hành động UI-only cho học viên/phụ huynh." accent="rose">
+          <SectionCard title="Yêu cầu học vụ" description="Mở luồng hỗ trợ end-to-end cho đổi lịch, học phí và hỗ trợ học tập." accent="rose">
+            <Link href="/student/requests" className="mb-4 inline-flex rounded-full border border-rose-400/20 bg-rose-400/10 px-4 py-2 text-sm font-medium text-rose-100 transition hover:border-rose-300/40 hover:text-white">
+              Vào trung tâm yêu cầu học viên
+            </Link>
             <div className="grid gap-3 text-sm">
-              {["Xin nghỉ buổi học", "Yêu cầu bảo lưu", "Đề xuất đổi lớp", "Hỏi giáo vụ"].map((action) => (
-                <button key={action} type="button" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left font-medium text-white transition hover:border-sky-400/30 hover:text-sky-200">
+              {[
+                "Xin nghỉ / đổi buổi học",
+                "Yêu cầu chuyển lớp",
+                "Trao đổi học phí",
+                "Liên hệ giáo vụ & hỗ trợ",
+              ].map((action) => (
+                <Link key={action} href="/student/requests" className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left font-medium text-white transition hover:border-sky-400/30 hover:text-sky-200">
                   {action}
-                </button>
+                </Link>
               ))}
+            </div>
+          </SectionCard>
+        </section>
+
+        <section>
+          <SectionCard title="Thông báo dành cho học viên" description="Announcement dành cho audience students/all để phụ huynh và học viên nắm lịch vận hành mới nhất." accent="violet">
+            <div className="space-y-3">
+              {studentNotifications.length ? (
+                studentNotifications.slice(0, 3).map((notification) => (
+                  <article key={notification.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="font-semibold text-white">{notification.title}</p>
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${notificationPriorityClass[notification.priority]}`}>
+                        {notificationPriorityLabel[notification.priority]}
+                      </span>
+                    </div>
+                    <p className="mt-2 leading-6">{notification.message}</p>
+                    <p className="mt-3 text-xs text-slate-500">
+                      Hiệu lực từ {notification.publishedAt}
+                      {notification.expiresAt ? ` • hết hạn ${notification.expiresAt}` : " • đang áp dụng"}
+                    </p>
+                  </article>
+                ))
+              ) : (
+                <p className="text-sm text-slate-300">Chưa có thông báo công khai cho học viên.</p>
+              )}
             </div>
           </SectionCard>
         </section>

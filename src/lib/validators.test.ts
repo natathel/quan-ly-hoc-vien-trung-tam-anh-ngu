@@ -5,6 +5,7 @@ import {
   courseSchema,
   invoiceSchema,
   leadSchema,
+  notificationSchema,
   sessionSchema,
   studentRequestSchema,
   studentSchema,
@@ -192,6 +193,44 @@ describe("validators", () => {
       expect(fieldErrors.title).toContain("Tiêu đề yêu cầu phải có ít nhất 2 ký tự");
       expect(fieldErrors.description).toContain("Vui lòng nhập nội dung yêu cầu");
       expect(fieldErrors.status).toBeTruthy();
+    }
+  });
+
+  it("accepts valid notification payloads and applies defaults", () => {
+    const result = notificationSchema.safeParse({
+      audience: "teachers",
+      title: "Nhắc chấm điểm cuối tuần",
+      message: "Vui lòng hoàn tất nhập điểm trước 17:00 thứ 6.",
+      expiresAt: "2026-05-01",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.priority).toBe("normal");
+      expect(result.data.publishedAt).toBeUndefined();
+      expect(result.data.expiresAt).toBe("2026-05-01");
+    }
+  });
+
+  it("rejects invalid notification payloads with field errors", () => {
+    const result = notificationSchema.safeParse({
+      audience: "parents",
+      title: "A",
+      message: "",
+      priority: "urgent",
+      publishedAt: "01-05-2026",
+      expiresAt: "tomorrow",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      expect(fieldErrors.audience).toBeTruthy();
+      expect(fieldErrors.title).toContain("Tiêu đề thông báo phải có ít nhất 2 ký tự");
+      expect(fieldErrors.message).toContain("Vui lòng nhập nội dung thông báo");
+      expect(fieldErrors.priority).toBeTruthy();
+      expect(fieldErrors.publishedAt).toContain("Ngày phải có định dạng YYYY-MM-DD");
+      expect(fieldErrors.expiresAt).toContain("Ngày phải có định dạng YYYY-MM-DD");
     }
   });
 });

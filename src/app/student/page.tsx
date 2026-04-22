@@ -7,9 +7,12 @@ import {
   listAttendanceRecords,
   listEnrollments,
   listInvoices,
+  listNotifications,
   listSessions,
   listStudents,
 } from "@/lib/database";
+
+export const dynamic = "force-dynamic";
 
 export default function StudentPage() {
   return (
@@ -21,6 +24,7 @@ export default function StudentPage() {
       assessments={listAssessments()}
       assessmentScores={listAssessmentScores()}
       invoices={listInvoices()}
+      notifications={listNotifications()}
       stats={getDashboardStats()}
       summary={getOperationalSummary()}
     />

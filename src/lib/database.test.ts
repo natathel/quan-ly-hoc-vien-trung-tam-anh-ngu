@@ -15,6 +15,7 @@ const {
   createAssessmentScore,
   createInvoice,
   createLead,
+  createNotification,
   createPayment,
   createStudentRequest,
   createStudent,
@@ -24,6 +25,7 @@ const {
   listAssessments,
   listInvoices,
   listLeads,
+  listNotifications,
   listStudentRequests,
   listStudents,
   listTeachers,
@@ -178,6 +180,27 @@ describe("database", () => {
     const requests = listStudentRequests();
     expect(requests[0]?.id).toBe(request.id);
     expect(requests.some((item) => item.studentName === "Nguyễn Minh Anh")).toBe(true);
+  });
+
+  it("creates and lists notifications for role-based announcements", () => {
+    const notification = createNotification({
+      audience: "teachers",
+      title: "Cập nhật lịch họp chuyên môn",
+      message: "Họp chuyên môn chuyển sang 08:30 sáng thứ 7 tại phòng 2.",
+      priority: "high",
+      publishedAt: "2026-04-22",
+      expiresAt: "2026-04-27",
+    });
+
+    expect(notification.id).toBeGreaterThan(0);
+    expect(notification.audience).toBe("teachers");
+    expect(notification.priority).toBe("high");
+    expect(notification.publishedAt).toBe("2026-04-22");
+    expect(notification.expiresAt).toBe("2026-04-27");
+
+    const notifications = listNotifications();
+    expect(notifications[0]?.id).toBe(notification.id);
+    expect(notifications.some((item) => item.title === "Cập nhật lịch họp chuyên môn")).toBe(true);
   });
 
   it("upgrades a legacy database by adding lead support without breaking existing data", async () => {

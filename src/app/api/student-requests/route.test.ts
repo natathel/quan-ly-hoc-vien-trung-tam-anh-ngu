@@ -1,6 +1,11 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "english-center-student-requests-"));
 process.env.NODE_ENV = "test";
+process.env.SQLITE_PATH = path.join(tempRoot, "test.db");
 
 const { resetDatabaseForTests } = await import("@/lib/database");
 const { GET, POST } = await import("./route");
@@ -51,6 +56,61 @@ describe("/api/student-requests route", () => {
     expect(payload.request.requestType).toBe("schedule_change");
     expect(payload.request.status).toBe("open");
     expect(payload.request.title).toBe("Xin đổi lịch học IELTS");
+  });
+
+  it("redirects form submissions back to the student requests page", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/student-requests", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          studentId: "1",
+          requestType: "academic",
+          title: "Hỗ trợ bài tập speaking",
+          description: "Em cần giáo viên hướng dẫn thêm bài speaking cuối tuần.",
+          returnTo: "/student/requests?submitted=1",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe("http://localhost/student/requests?submitted=1");
+
+    const verifyResponse = await GET();
+    const payload = (await verifyResponse.json()) as { requests: Array<{ studentId: number; requestType: string; status: string }> };
+    expect(payload.requests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          studentId: 1,
+          requestType: "academic",
+          status: "open",
+        }),
+      ]),
+    );
+  });
+
+  it("ignores protocol-relative return targets from form submissions", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/student-requests", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          studentId: "1",
+          requestType: "support",
+          title: "Cần hỗ trợ tài khoản",
+          description: "Phụ huynh cần trung tâm gọi lại.",
+          returnTo: "//evil.com/phish",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(response.headers.get("location")).toBeNull();
+
+    const payload = (await response.json()) as { request: { studentId: number; requestType: string; status: string } };
+    expect(payload.request.studentId).toBe(1);
+    expect(payload.request.requestType).toBe("support");
+    expect(payload.request.status).toBe("open");
   });
 
   it("returns validation details for invalid POST payload", async () => {

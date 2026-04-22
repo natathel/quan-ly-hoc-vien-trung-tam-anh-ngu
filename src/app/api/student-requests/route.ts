@@ -11,9 +11,27 @@ export async function GET() {
 
 export async function POST(request: Request) {
   let body: unknown;
+  let returnTo: string | null = null;
 
   try {
-    body = await request.json();
+    const contentType = request.headers.get("content-type") ?? "";
+
+    if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      const formBody: Record<string, FormDataEntryValue> = {};
+      formData.forEach((value, key) => {
+        formBody[key] = value;
+      });
+      body = formBody;
+      const rawReturnTo = formData.get("returnTo");
+      returnTo = typeof rawReturnTo === "string"
+        && rawReturnTo.startsWith("/")
+        && !rawReturnTo.startsWith("//")
+        ? rawReturnTo
+        : null;
+    } else {
+      body = await request.json();
+    }
   } catch {
     return Response.json({ error: "JSON không hợp lệ" }, { status: 400 });
   }
@@ -30,6 +48,11 @@ export async function POST(request: Request) {
   try {
     getStudent(parsed.data.studentId);
     const requestItem = createStudentRequest(parsed.data);
+
+    if (returnTo) {
+      return Response.redirect(new URL(returnTo, request.url), 303);
+    }
+
     return Response.json({ request: requestItem }, { status: 201 });
   } catch (error) {
     if (error instanceof Error && error.message === "Không tìm thấy học viên") {

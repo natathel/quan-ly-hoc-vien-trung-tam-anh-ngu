@@ -17,6 +17,8 @@ import type {
   InvoiceInput,
   Lead,
   LeadInput,
+  Notification,
+  NotificationInput,
   OperationalSummary,
   Payment,
   PaymentInput,
@@ -241,6 +243,18 @@ function migrate(db: Database.Database) {
       FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      audience TEXT NOT NULL DEFAULT 'all',
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      priority TEXT NOT NULL DEFAULT 'normal',
+      published_at TEXT NOT NULL DEFAULT CURRENT_DATE,
+      expires_at TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
     CREATE INDEX IF NOT EXISTS idx_students_level ON students(level);
     CREATE INDEX IF NOT EXISTS idx_enrollments_student ON enrollments(student_id);
@@ -254,6 +268,8 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at);
     CREATE INDEX IF NOT EXISTS idx_student_requests_student ON student_requests(student_id);
     CREATE INDEX IF NOT EXISTS idx_student_requests_status ON student_requests(status);
+    CREATE INDEX IF NOT EXISTS idx_notifications_audience ON notifications(audience);
+    CREATE INDEX IF NOT EXISTS idx_notifications_published_at ON notifications(published_at);
   `);
 
   ensureColumn(db, "students", "guardian_name", "TEXT NOT NULL DEFAULT ''");
@@ -847,6 +863,20 @@ function mapStudentRequest(row: Record<string, unknown>): StudentRequest {
   };
 }
 
+function mapNotification(row: Record<string, unknown>): Notification {
+  return {
+    id: Number(row.id),
+    audience: row.audience as Notification["audience"],
+    title: String(row.title),
+    message: String(row.message),
+    priority: row.priority as Notification["priority"],
+    publishedAt: String(row.published_at),
+    expiresAt: row.expires_at ? String(row.expires_at) : null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
 function refreshInvoiceStatus(invoiceId: number) {
   const db = getDb();
   const row = db
@@ -1219,6 +1249,14 @@ export function listStudentRequests(): StudentRequest[] {
   return rows.map(mapStudentRequest);
 }
 
+export function listNotifications(): Notification[] {
+  const db = getDb();
+  const rows = db
+    .prepare("SELECT * FROM notifications ORDER BY published_at DESC, created_at DESC, id DESC")
+    .all() as Record<string, unknown>[];
+  return rows.map(mapNotification);
+}
+
 export function createInvoice(input: InvoiceInput): Invoice {
   const db = getDb();
   const invoiceNo = input.invoiceNo?.trim() || nextInvoiceNo();
@@ -1286,6 +1324,23 @@ export function createStudentRequest(input: StudentRequestInput): StudentRequest
     )
     .get(result.lastInsertRowid) as Record<string, unknown>;
   return mapStudentRequest(row);
+}
+
+export function createNotification(input: NotificationInput): Notification {
+  const db = getDb();
+  const result = db
+    .prepare(
+      `INSERT INTO notifications (audience, title, message, priority, published_at, expires_at)
+       VALUES (@audience, @title, @message, @priority, @publishedAt, @expiresAt)`,
+    )
+    .run({
+      ...input,
+      publishedAt: input.publishedAt ?? todayIso(),
+      expiresAt: input.expiresAt ?? null,
+    });
+
+  const row = db.prepare("SELECT * FROM notifications WHERE id = ?").get(result.lastInsertRowid) as Record<string, unknown>;
+  return mapNotification(row);
 }
 
 export function createPayment(input: PaymentInput): Payment {
@@ -1483,6 +1538,7 @@ export function resetDatabaseForTests() {
 
   const db = getDb();
   db.exec(`
+    DELETE FROM notifications;
     DELETE FROM student_requests;
     DELETE FROM leads;
     DELETE FROM payments;

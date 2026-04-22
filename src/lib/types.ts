@@ -10,6 +10,8 @@ export type PaymentMethod = "cash" | "bank_transfer" | "card" | "e_wallet";
 export type LeadStatus = "new" | "contacted" | "trial_scheduled" | "converted" | "lost";
 export type StudentRequestType = "class_transfer" | "schedule_change" | "tuition" | "academic" | "support";
 export type StudentRequestStatus = "open" | "in_progress" | "resolved" | "closed";
+export type NotificationAudience = "all" | "students" | "teachers" | "staff";
+export type NotificationPriority = "normal" | "high" | "critical";
 
 export interface Student {
   id: number;
@@ -173,6 +175,18 @@ export interface StudentRequest {
   updatedAt: string;
 }
 
+export interface Notification {
+  id: number;
+  audience: NotificationAudience;
+  title: string;
+  message: string;
+  priority: NotificationPriority;
+  publishedAt: string;
+  expiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StudentCareItem {
   studentId: number;
   studentName: string;
@@ -318,4 +332,13 @@ export interface StudentRequestInput {
   description: string;
   status: StudentRequestStatus;
   response?: string;
+}
+
+export interface NotificationInput {
+  audience: NotificationAudience;
+  title: string;
+  message: string;
+  priority: NotificationPriority;
+  publishedAt?: string;
+  expiresAt?: string | null;
 }

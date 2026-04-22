@@ -11,6 +11,8 @@ export const paymentMethodSchema = z.enum(["cash", "bank_transfer", "card", "e_w
 export const leadStatusSchema = z.enum(["new", "contacted", "trial_scheduled", "converted", "lost"]);
 export const studentRequestTypeSchema = z.enum(["class_transfer", "schedule_change", "tuition", "academic", "support"]);
 export const studentRequestStatusSchema = z.enum(["open", "in_progress", "resolved", "closed"]);
+export const notificationAudienceSchema = z.enum(["all", "students", "teachers", "staff"]);
+export const notificationPrioritySchema = z.enum(["normal", "high", "critical"]);
 
 const dateString = z
   .string()
@@ -135,4 +137,13 @@ export const studentRequestSchema = z.object({
   description: z.string().trim().min(1, "Vui lòng nhập nội dung yêu cầu"),
   status: studentRequestStatusSchema.default("open"),
   response: z.string().trim().optional().default(""),
+});
+
+export const notificationSchema = z.object({
+  audience: notificationAudienceSchema.default("all"),
+  title: z.string().trim().min(2, "Tiêu đề thông báo phải có ít nhất 2 ký tự"),
+  message: z.string().trim().min(1, "Vui lòng nhập nội dung thông báo"),
+  priority: notificationPrioritySchema.default("normal"),
+  publishedAt: dateString.optional(),
+  expiresAt: dateString.nullable().optional(),
 });
