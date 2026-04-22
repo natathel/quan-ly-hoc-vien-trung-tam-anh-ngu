@@ -1,26 +1,81 @@
 # Quản lý học viên trung tâm anh ngữ
 
-Ứng dụng **Next.js full stack + SQLite** để quản lý học viên, lớp học, ghi danh và học phí cho một trung tâm anh ngữ.
+Ứng dụng **Next.js full stack + SQLite** để quản lý toàn diện hoạt động của một trung tâm anh ngữ: học viên, phụ huynh, lớp học, giáo viên, ghi danh, buổi học, điểm danh, điểm số, học phí, chứng từ và dashboard điều hành.
 
 ## Tính năng đã có
 
-- Dashboard tổng quan:
+### Dashboard điều hành
+
+- KPI học vụ:
   - tổng học viên,
   - học viên đang học,
   - số lớp đang mở,
-  - doanh thu dự kiến theo tháng,
-  - công suất lớp,
-  - số ghi danh chưa thu học phí.
-- Frontend quản trị bằng Next.js App Router + Tailwind CSS.
-- Backend API Route Handlers:
-  - `GET/POST /api/students`
-  - `GET/POST /api/courses`
-  - `GET/POST /api/enrollments`
-  - `GET /api/dashboard`
-- SQLite local database với migration tự động.
-- Seed dữ liệu mẫu cho trung tâm anh ngữ.
-- Validation bằng Zod.
-- Test bằng Vitest cho database và validators.
+  - công suất lớp.
+- KPI giảng dạy:
+  - giáo viên đang hoạt động,
+  - buổi học đã hoàn thành,
+  - buổi học sắp tới,
+  - tỷ lệ điểm danh quy đổi.
+- KPI chất lượng:
+  - điểm trung bình,
+  - bài đánh giá gần đây,
+  - danh sách học viên cần chăm sóc.
+- KPI tài chính:
+  - doanh thu dự kiến,
+  - học phí đã thu,
+  - công nợ còn phải thu,
+  - hóa đơn quá hạn.
+
+### Phân hệ nghiệp vụ
+
+- Hồ sơ học viên:
+  - thông tin liên hệ,
+  - phụ huynh/người giám hộ,
+  - mục tiêu học tập,
+  - trạng thái học vụ.
+- Lớp học và ghi danh:
+  - trình độ,
+  - giáo viên phụ trách,
+  - lịch học,
+  - sĩ số,
+  - trạng thái thu học phí theo ghi danh.
+- Giáo viên:
+  - thông tin liên hệ,
+  - chuyên môn,
+  - trạng thái công tác,
+  - đơn giá giờ dạy.
+- Giảng dạy:
+  - buổi học,
+  - chủ đề,
+  - bài tập về nhà,
+  - trạng thái buổi học,
+  - điểm danh.
+- Điểm số:
+  - bài kiểm tra / đánh giá,
+  - loại đánh giá,
+  - trọng số,
+  - điểm từng học viên,
+  - phản hồi học tập.
+- Tài chính & chứng từ:
+  - hóa đơn học phí,
+  - giảm giá,
+  - hạn thanh toán,
+  - thanh toán,
+  - tự động cập nhật trạng thái hóa đơn sau khi ghi nhận thanh toán.
+
+## Backend API
+
+- `GET/POST /api/students`
+- `GET/POST /api/courses`
+- `GET/POST /api/enrollments`
+- `GET/POST /api/teachers`
+- `GET/POST /api/sessions`
+- `GET/POST /api/assessments`
+- `GET/POST /api/invoices`
+- `GET/POST /api/payments`
+- `GET /api/dashboard`
+
+API dùng Zod để validate payload đầu vào. SQLite migration tự động tạo các bảng cần thiết khi app khởi động.
 
 ## Công nghệ
 
@@ -73,22 +128,21 @@ npm run lint
 npm run build
 ```
 
-Kết quả verify hiện tại:
-
-- `npm test`: pass, 4 tests
-- `npm run lint`: pass
-- `npm run build`: pass
-
 ## Cấu trúc chính
 
 ```text
 src/
   app/
     api/
+      assessments/route.ts
       courses/route.ts
       dashboard/route.ts
       enrollments/route.ts
+      invoices/route.ts
+      payments/route.ts
+      sessions/route.ts
       students/route.ts
+      teachers/route.ts
     layout.tsx
     page.tsx
   components/
@@ -101,11 +155,12 @@ src/
     validators.test.ts
 ```
 
-## Hướng mở rộng tiếp theo
+## Phase tiếp theo đề xuất
 
-- Thêm form frontend để tạo/sửa/xóa học viên, lớp học và ghi danh.
-- Thêm trang chi tiết học viên.
-- Thêm phân quyền admin/nhân viên tư vấn/giáo viên.
-- Thêm import/export Excel.
-- Thêm lịch học và điểm danh.
-- Thêm báo cáo học phí theo tháng.
+- CRUD frontend đầy đủ cho từng phân hệ.
+- Trang chi tiết học viên với lịch sử điểm danh, điểm số, chứng từ.
+- Phân quyền admin / giáo vụ / giáo viên / kế toán.
+- Import/export Excel.
+- Xuất PDF biên lai và phiếu thu.
+- Lịch giáo viên, phòng học, nhắc nợ tự động.
+- Sổ liên lạc phụ huynh và báo cáo tiến bộ định kỳ.
