@@ -2,9 +2,10 @@ import Link from "next/link";
 
 const navItems = [
   { key: "landing", href: "/", label: "Landing" },
-  { key: "student", href: "/student", label: "Học viên" },
-  { key: "teacher", href: "/teacher", label: "Giáo viên" },
-  { key: "admin", href: "/admin", label: "Admin" },
+  { key: "login", href: "/login", label: "Đăng nhập" },
+  { key: "student", href: "/student/login", label: "Học viên" },
+  { key: "teacher", href: "/teacher/login", label: "Giáo viên" },
+  { key: "admin", href: "/admin/login", label: "Admin" },
 ] as const;
 
 export type PortalNavActive = (typeof navItems)[number]["key"];

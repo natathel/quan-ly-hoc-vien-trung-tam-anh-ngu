@@ -48,8 +48,8 @@ const teacherHighlights = [
 
 const faqs = [
   ["Trung tâm có phù hợp cho học viên mất gốc không?", "Có. Lộ trình đầu vào được chia theo năng lực thực tế để học viên bắt đầu từ nền tảng phù hợp nhất."],
-  ["Phụ huynh theo dõi tiến độ học như thế nào?", "Portal học viên hiển thị lớp đang học, lịch buổi tới, điểm danh, đánh giá và hóa đơn mở để phụ huynh nắm tình hình nhanh."],
-  ["Giáo viên cập nhật báo cáo lớp ở đâu?", "Teacher portal được thiết kế để điểm danh, ghi nhận đánh giá, theo dõi watchlist và gửi yêu cầu vận hành."],
+  ["Phụ huynh theo dõi tiến độ học như thế nào?", "Phụ huynh đăng nhập qua cổng học viên để xem lớp đang học, lịch buổi tới, điểm danh, đánh giá và hóa đơn mở."],
+  ["Giáo viên cập nhật báo cáo lớp ở đâu?", "Giáo viên đăng nhập qua cổng riêng để điểm danh, ghi nhận đánh giá, theo dõi watchlist và gửi yêu cầu vận hành."],
   ["Giai đoạn này lead form đã hoạt động chưa?", "Chưa. Form hiện là giao diện demo để hoàn thiện trải nghiệm tuyển sinh trước khi nối API CRM ở phase sau."],
 ] as const;
 
@@ -69,19 +69,19 @@ export function LandingPage() {
                 Trung tâm anh ngữ với trải nghiệm 4 portal thống nhất từ tuyển sinh đến vận hành.
               </h1>
               <p className="max-w-3xl text-base leading-8 text-slate-300">
-                Demo phase 1 tập trung vào landing page, portal học viên, portal giáo viên và admin portal để
+                Demo phase hiện tập trung vào landing page, luồng đăng nhập theo vai trò, portal học viên, portal giáo viên và admin portal để
                 giúp trung tâm kiểm soát toàn bộ hành trình: tuyển sinh, xếp lớp, học tập, tài chính và chăm sóc.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/student" className="rounded-full bg-sky-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-300">
-                Xem portal học viên
+              <Link href="/student/login" className="rounded-full bg-sky-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-300">
+                Đăng nhập học viên / phụ huynh
               </Link>
-              <Link href="/teacher" className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-emerald-400/30 hover:text-emerald-200">
-                Xem portal giáo viên
+              <Link href="/teacher/login" className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-emerald-400/30 hover:text-emerald-200">
+                Đăng nhập giáo viên
               </Link>
-              <Link href="/admin" className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-violet-400/30 hover:text-violet-200">
-                Vào admin portal
+              <Link href="/admin/login" className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-violet-400/30 hover:text-violet-200">
+                Đăng nhập admin
               </Link>
             </div>
           </div>
