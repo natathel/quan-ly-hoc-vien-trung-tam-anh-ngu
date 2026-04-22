@@ -14,13 +14,17 @@ const {
   createAssessment,
   createAssessmentScore,
   createInvoice,
+  createLead,
   createPayment,
+  createStudentRequest,
   createStudent,
   createTeacher,
   getDashboardStats,
   getOperationalSummary,
   listAssessments,
   listInvoices,
+  listLeads,
+  listStudentRequests,
   listStudents,
   listTeachers,
   resetDatabaseForTests,
@@ -135,6 +139,107 @@ describe("database", () => {
     expect(paidInvoice?.outstandingAmount).toBe(0);
   });
 
+  it("creates and lists leads for the CRM pipeline", () => {
+    const lead = createLead({
+      fullName: "Phan Tuệ Nhi",
+      phone: "0977665544",
+      email: "tuenhi.parent@example.com",
+      source: "facebook_ads",
+      programInterest: "Tiếng Anh thiếu nhi",
+      status: "contacted",
+      note: "Phụ huynh muốn học thử trong tuần này.",
+    });
+
+    expect(lead.id).toBeGreaterThan(0);
+    expect(lead.status).toBe("contacted");
+    expect(lead.programInterest).toBe("Tiếng Anh thiếu nhi");
+
+    const leads = listLeads();
+    expect(leads[0]?.id).toBe(lead.id);
+    expect(leads.some((item) => item.source === "facebook_ads")).toBe(true);
+  });
+
+  it("creates and lists student requests for learner support workflows", () => {
+    const request = createStudentRequest({
+      studentId: 1,
+      requestType: "class_transfer",
+      title: "Xin chuyển sang lớp tối",
+      description: "Em muốn chuyển sang lớp tối thứ 3-5 để phù hợp lịch học.",
+      status: "in_progress",
+      response: "Đã tiếp nhận và đang kiểm tra sĩ số lớp phù hợp.",
+    });
+
+    expect(request.id).toBeGreaterThan(0);
+    expect(request.studentId).toBe(1);
+    expect(request.studentName).toBe("Nguyễn Minh Anh");
+    expect(request.requestType).toBe("class_transfer");
+    expect(request.status).toBe("in_progress");
+
+    const requests = listStudentRequests();
+    expect(requests[0]?.id).toBe(request.id);
+    expect(requests.some((item) => item.studentName === "Nguyễn Minh Anh")).toBe(true);
+  });
+
+  it("upgrades a legacy database by adding lead support without breaking existing data", async () => {
+    const legacyRoot = fs.mkdtempSync(path.join(os.tmpdir(), "english-center-legacy-leads-"));
+    const legacyPath = path.join(legacyRoot, "legacy-leads.db");
+    const legacyDb = new Database(legacyPath);
+
+    legacyDb.exec(`
+      CREATE TABLE students (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        full_name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        date_of_birth TEXT NOT NULL,
+        level TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active',
+        enrollment_date TEXT NOT NULL,
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        guardian_name TEXT NOT NULL DEFAULT '',
+        guardian_phone TEXT NOT NULL DEFAULT '',
+        learning_goal TEXT NOT NULL DEFAULT ''
+      );
+
+      CREATE TABLE courses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        level TEXT NOT NULL,
+        teacher TEXT NOT NULL,
+        schedule TEXT NOT NULL,
+        monthly_fee INTEGER NOT NULL DEFAULT 0,
+        capacity INTEGER NOT NULL DEFAULT 12,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    legacyDb.close();
+
+    const originalSqlitePath = process.env.SQLITE_PATH;
+    process.env.SQLITE_PATH = legacyPath;
+
+    expect(listLeads()).toEqual([]);
+
+    const migratedLead = createLead({
+      fullName: "Lưu Gia Bảo",
+      phone: "0908111222",
+      email: "giabao.parent@example.com",
+      source: "landing_page",
+      programInterest: "IELTS Foundation",
+      status: "new",
+      note: "Đăng ký từ form website.",
+    });
+
+    expect(migratedLead.id).toBeGreaterThan(0);
+    expect(listStudents()).toEqual([]);
+    expect(listLeads()).toHaveLength(1);
+
+    process.env.SQLITE_PATH = originalSqlitePath;
+    resetDatabaseForTests();
+  });
+
   it("returns operational summary for leadership dashboard", () => {
     const summary = getOperationalSummary();
 
@@ -243,12 +348,13 @@ describe("database", () => {
     process.env.SQLITE_PATH = legacyPath;
     const stats = getDashboardStats();
 
-    expect(listTeachers().length).toBeGreaterThan(0);
-    expect(databaseModule.listSessions().length).toBeGreaterThan(0);
-    expect(listAssessments().length).toBeGreaterThan(0);
-    expect(listInvoices().length).toBeGreaterThan(0);
-    expect(stats.activeTeachers).toBeGreaterThan(0);
-    expect(stats.scheduledSessions).toBeGreaterThan(0);
+    expect(listStudents()).toHaveLength(3);
+    expect(listTeachers()).toEqual([]);
+    expect(databaseModule.listSessions()).toEqual([]);
+    expect(listAssessments()).toEqual([]);
+    expect(listInvoices()).toEqual([]);
+    expect(stats.activeTeachers).toBe(0);
+    expect(stats.scheduledSessions).toBe(0);
 
     process.env.SQLITE_PATH = originalSqlitePath;
     resetDatabaseForTests();

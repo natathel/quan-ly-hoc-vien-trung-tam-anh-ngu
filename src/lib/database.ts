@@ -15,6 +15,8 @@ import type {
   EnrollmentInput,
   Invoice,
   InvoiceInput,
+  Lead,
+  LeadInput,
   OperationalSummary,
   Payment,
   PaymentInput,
@@ -23,6 +25,8 @@ import type {
   Student,
   StudentCareItem,
   StudentInput,
+  StudentRequest,
+  StudentRequestInput,
   Teacher,
   TeacherInput,
 } from "./types";
@@ -49,11 +53,21 @@ function getDb() {
     activeDatabasePath = databasePath;
     dbInstance.pragma("journal_mode = WAL");
     dbInstance.pragma("foreign_keys = ON");
+    const shouldSeed = isFreshDatabase(dbInstance);
     migrate(dbInstance);
-    seed(dbInstance);
+    if (shouldSeed) {
+      seed(dbInstance);
+    }
   }
 
   return dbInstance;
+}
+
+function isFreshDatabase(db: Database.Database) {
+  const row = db
+    .prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")
+    .get() as { count: number };
+  return row.count === 0;
 }
 
 function hasColumn(db: Database.Database, table: string, column: string) {
@@ -201,6 +215,32 @@ function migrate(db: Database.Database) {
       FOREIGN KEY(invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS leads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      full_name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      email TEXT NOT NULL,
+      source TEXT NOT NULL,
+      program_interest TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'new',
+      note TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS student_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL,
+      request_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'open',
+      response TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
     CREATE INDEX IF NOT EXISTS idx_students_level ON students(level);
     CREATE INDEX IF NOT EXISTS idx_enrollments_student ON enrollments(student_id);
@@ -210,6 +250,10 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_assessments_course ON assessments(course_id);
     CREATE INDEX IF NOT EXISTS idx_invoice_student ON invoices(student_id);
     CREATE INDEX IF NOT EXISTS idx_payment_invoice ON payments(invoice_id);
+    CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
+    CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at);
+    CREATE INDEX IF NOT EXISTS idx_student_requests_student ON student_requests(student_id);
+    CREATE INDEX IF NOT EXISTS idx_student_requests_status ON student_requests(status);
   `);
 
   ensureColumn(db, "students", "guardian_name", "TEXT NOT NULL DEFAULT ''");
@@ -773,6 +817,36 @@ function mapStudentCareItem(row: Record<string, unknown>): StudentCareItem {
   };
 }
 
+function mapLead(row: Record<string, unknown>): Lead {
+  return {
+    id: Number(row.id),
+    fullName: String(row.full_name),
+    phone: String(row.phone),
+    email: String(row.email),
+    source: String(row.source),
+    programInterest: String(row.program_interest),
+    status: row.status as Lead["status"],
+    note: String(row.note ?? ""),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function mapStudentRequest(row: Record<string, unknown>): StudentRequest {
+  return {
+    id: Number(row.id),
+    studentId: Number(row.student_id),
+    studentName: String(row.student_name),
+    requestType: row.request_type as StudentRequest["requestType"],
+    title: String(row.title),
+    description: String(row.description),
+    status: row.status as StudentRequest["status"],
+    response: String(row.response ?? ""),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
 function refreshInvoiceStatus(invoiceId: number) {
   const db = getDb();
   const row = db
@@ -1124,6 +1198,27 @@ export function listInvoices(): Invoice[] {
   return rows.map(mapInvoice);
 }
 
+export function listLeads(): Lead[] {
+  const db = getDb();
+  const rows = db
+    .prepare("SELECT * FROM leads ORDER BY created_at DESC, id DESC")
+    .all() as Record<string, unknown>[];
+  return rows.map(mapLead);
+}
+
+export function listStudentRequests(): StudentRequest[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT student_requests.*, students.full_name AS student_name
+       FROM student_requests
+       JOIN students ON students.id = student_requests.student_id
+       ORDER BY student_requests.created_at DESC, student_requests.id DESC`,
+    )
+    .all() as Record<string, unknown>[];
+  return rows.map(mapStudentRequest);
+}
+
 export function createInvoice(input: InvoiceInput): Invoice {
   const db = getDb();
   const invoiceNo = input.invoiceNo?.trim() || nextInvoiceNo();
@@ -1152,6 +1247,45 @@ export function createInvoice(input: InvoiceInput): Invoice {
     .get(invoiceId) as Record<string, unknown>;
 
   return mapInvoice(row);
+}
+
+export function createLead(input: LeadInput): Lead {
+  const db = getDb();
+  const result = db
+    .prepare(
+      `INSERT INTO leads (full_name, phone, email, source, program_interest, status, note)
+       VALUES (@fullName, @phone, @email, @source, @programInterest, @status, @note)`,
+    )
+    .run({
+      ...input,
+      note: input.note ?? "",
+    });
+
+  const row = db.prepare("SELECT * FROM leads WHERE id = ?").get(result.lastInsertRowid) as Record<string, unknown>;
+  return mapLead(row);
+}
+
+export function createStudentRequest(input: StudentRequestInput): StudentRequest {
+  const db = getDb();
+  const result = db
+    .prepare(
+      `INSERT INTO student_requests (student_id, request_type, title, description, status, response)
+       VALUES (@studentId, @requestType, @title, @description, @status, @response)`,
+    )
+    .run({
+      ...input,
+      response: input.response ?? "",
+    });
+
+  const row = db
+    .prepare(
+      `SELECT student_requests.*, students.full_name AS student_name
+       FROM student_requests
+       JOIN students ON students.id = student_requests.student_id
+       WHERE student_requests.id = ?`,
+    )
+    .get(result.lastInsertRowid) as Record<string, unknown>;
+  return mapStudentRequest(row);
 }
 
 export function createPayment(input: PaymentInput): Payment {
@@ -1349,6 +1483,8 @@ export function resetDatabaseForTests() {
 
   const db = getDb();
   db.exec(`
+    DELETE FROM student_requests;
+    DELETE FROM leads;
     DELETE FROM payments;
     DELETE FROM invoices;
     DELETE FROM assessment_scores;

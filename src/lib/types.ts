@@ -7,6 +7,9 @@ export type AttendanceStatus = "present" | "absent" | "late" | "excused";
 export type AssessmentType = "placement" | "quiz" | "midterm" | "final" | "speaking" | "writing";
 export type InvoiceStatus = "draft" | "issued" | "partially_paid" | "paid" | "overdue" | "void";
 export type PaymentMethod = "cash" | "bank_transfer" | "card" | "e_wallet";
+export type LeadStatus = "new" | "contacted" | "trial_scheduled" | "converted" | "lost";
+export type StudentRequestType = "class_transfer" | "schedule_change" | "tuition" | "academic" | "support";
+export type StudentRequestStatus = "open" | "in_progress" | "resolved" | "closed";
 
 export interface Student {
   id: number;
@@ -144,6 +147,32 @@ export interface Payment {
   note: string;
 }
 
+export interface Lead {
+  id: number;
+  fullName: string;
+  phone: string;
+  email: string;
+  source: string;
+  programInterest: string;
+  status: LeadStatus;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentRequest {
+  id: number;
+  studentId: number;
+  studentName: string;
+  requestType: StudentRequestType;
+  title: string;
+  description: string;
+  status: StudentRequestStatus;
+  response: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StudentCareItem {
   studentId: number;
   studentName: string;
@@ -270,4 +299,23 @@ export interface PaymentInput {
   method: PaymentMethod;
   referenceNo?: string;
   note?: string;
+}
+
+export interface LeadInput {
+  fullName: string;
+  phone: string;
+  email: string;
+  source: string;
+  programInterest: string;
+  status: LeadStatus;
+  note?: string;
+}
+
+export interface StudentRequestInput {
+  studentId: number;
+  requestType: StudentRequestType;
+  title: string;
+  description: string;
+  status: StudentRequestStatus;
+  response?: string;
 }

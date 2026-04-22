@@ -1,3 +1,6 @@
+import Link from "next/link";
+
+import { PortalNav } from "@/components/shared/portal-nav";
 import type { Assessment, Course, DashboardStats, Enrollment, Invoice, OperationalSummary, Student, Teacher } from "@/lib/types";
 
 type DashboardShellProps = {
@@ -91,22 +94,33 @@ const careSeverityClass = {
   high: "border-rose-500/20 bg-rose-500/10 text-rose-200",
 };
 
+const adminModules = [
+  { title: "Học viên", href: "/admin/students", description: "Quản lý hồ sơ, phụ huynh và trạng thái học tập.", accent: "text-sky-300" },
+  { title: "Giáo viên", href: "/admin/teachers", description: "Điều phối năng lực giảng dạy và lịch công tác.", accent: "text-emerald-300" },
+  { title: "Khoá học", href: "/admin/courses", description: "Theo dõi lớp mở, lịch học và công suất.", accent: "text-violet-300" },
+  { title: "Ghi danh", href: "/admin/enrollments", description: "Kiểm soát ghi danh và trạng thái thanh toán.", accent: "text-amber-300" },
+  { title: "Hóa đơn", href: "/admin/invoices", description: "Theo dõi chứng từ, công nợ và hạn thanh toán.", accent: "text-rose-300" },
+  { title: "Lead tuyển sinh", href: "/admin/leads", description: "Bảng CRM minh hoạ cho lead từ landing page và marketing.", accent: "text-cyan-300" },
+] as const;
+
 export function DashboardShell({ stats, summary, students, courses, enrollments, teachers }: DashboardShellProps) {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+        <PortalNav active="admin" />
+
         <section className="grid gap-4 rounded-3xl border border-white/10 bg-gradient-to-r from-sky-500/15 via-slate-900 to-emerald-500/10 p-6 shadow-2xl shadow-sky-950/30 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div className="space-y-4">
             <span className="inline-flex rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-sky-200">
-              Phase 1 • ERP trung tâm anh ngữ
+              Admin portal • Điều hành trung tâm
             </span>
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                Hệ thống quản trị trung tâm anh ngữ toàn diện
+                Bảng điều hành admin cho kiến trúc 4 portal của trung tâm anh ngữ
               </h1>
               <p className="max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-                Bản nâng cấp mở rộng từ demo ban đầu sang dashboard điều hành nhiều phân hệ: học vụ,
-                giảng dạy, điểm danh, đánh giá học tập, học phí, chứng từ và cảnh báo vận hành.
+                Admin portal giữ vai trò trung tâm điều phối học vụ, giảng dạy, tài chính, báo cáo và
+                các module mở rộng, đồng thời liên kết trực tiếp với landing, student portal và teacher portal.
               </p>
             </div>
           </div>
@@ -128,6 +142,19 @@ export function DashboardShell({ stats, summary, students, courses, enrollments,
               <p className="mt-1">Điểm trung bình: <span className="font-semibold text-sky-300">{formatScore(stats.averageScore)}</span></p>
             </div>
           </div>
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {adminModules.map((module) => (
+            <Link
+              key={module.title}
+              href={module.href}
+              className="rounded-3xl border border-white/10 bg-slate-900/80 p-5 shadow-lg shadow-slate-950/30 transition hover:border-sky-400/30 hover:bg-slate-900"
+            >
+              <p className={`text-sm font-semibold ${module.accent}`}>{module.title}</p>
+              <p className="mt-3 text-sm leading-6 text-slate-300">{module.description}</p>
+            </Link>
+          ))}
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -192,7 +219,7 @@ export function DashboardShell({ stats, summary, students, courses, enrollments,
           </article>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <section id="students" className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <article className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
@@ -242,7 +269,7 @@ export function DashboardShell({ stats, summary, students, courses, enrollments,
             </div>
           </article>
 
-          <article className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
+          <article id="teachers" className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
             <div className="mb-5">
               <h2 className="text-xl font-semibold text-white">Giáo viên & năng lực</h2>
               <p className="mt-1 text-sm text-slate-400">Phân bổ nguồn lực giảng dạy theo chuyên môn.</p>
@@ -271,7 +298,7 @@ export function DashboardShell({ stats, summary, students, courses, enrollments,
           </article>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <section id="enrollments" className="grid gap-6 xl:grid-cols-[1fr_1fr]">
           <article className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
             <div className="mb-5 flex items-center justify-between">
               <div>
@@ -304,7 +331,7 @@ export function DashboardShell({ stats, summary, students, courses, enrollments,
             </div>
           </article>
 
-          <article className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
+          <article id="courses" className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
             <div className="mb-5">
               <h2 className="text-xl font-semibold text-white">Lớp học đang vận hành</h2>
               <p className="mt-1 text-sm text-slate-400">Sĩ số, lịch học, giáo viên và doanh thu tiêu chuẩn.</p>
@@ -330,7 +357,7 @@ export function DashboardShell({ stats, summary, students, courses, enrollments,
           </article>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <section id="reports" className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <article className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
             <div className="mb-5">
               <h2 className="text-xl font-semibold text-white">Buổi học sắp tới</h2>
@@ -402,7 +429,7 @@ export function DashboardShell({ stats, summary, students, courses, enrollments,
             </div>
           </article>
 
-          <article className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
+          <article id="finance" className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
             <div className="mb-5">
               <h2 className="text-xl font-semibold text-white">Cảnh báo học phí & chứng từ</h2>
               <p className="mt-1 text-sm text-slate-400">Theo dõi hóa đơn mở, công nợ và tình trạng thanh toán.</p>
@@ -432,7 +459,7 @@ export function DashboardShell({ stats, summary, students, courses, enrollments,
           </article>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
+        <section id="permissions" className="rounded-3xl border border-white/10 bg-slate-900/80 p-6 shadow-lg shadow-slate-950/30">
           <div className="mb-5">
             <h2 className="text-xl font-semibold text-white">Năng lực backend phase 1</h2>
             <p className="mt-1 text-sm text-slate-400">Các API đã sẵn sàng để anh tiếp tục mở rộng CRUD chi tiết, phân quyền và báo cáo chuyên sâu ở phase sau.</p>

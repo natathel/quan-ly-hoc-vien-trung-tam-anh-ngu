@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { assessmentSchema, courseSchema, invoiceSchema, sessionSchema, studentSchema, teacherSchema } from "./validators";
+import {
+  assessmentSchema,
+  courseSchema,
+  invoiceSchema,
+  leadSchema,
+  sessionSchema,
+  studentRequestSchema,
+  studentSchema,
+  teacherSchema,
+} from "./validators";
 
 describe("validators", () => {
   it("accepts valid student payloads with guardian and learning goal", () => {
@@ -109,5 +118,80 @@ describe("validators", () => {
 
     expect(valid.success).toBe(true);
     expect(invalid.success).toBe(false);
+  });
+
+  it("accepts valid lead payloads and defaults status to new", () => {
+    const result = leadSchema.safeParse({
+      fullName: "Nguyễn Hoài Thương",
+      phone: "0912345678",
+      email: "thuong.parent@example.com",
+      source: "landing_page",
+      programInterest: "IELTS Foundation",
+      note: "Muốn được tư vấn lớp cuối tuần.",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe("new");
+      expect(result.data.note).toBe("Muốn được tư vấn lớp cuối tuần.");
+    }
+  });
+
+  it("rejects invalid lead payloads with Vietnamese field errors", () => {
+    const result = leadSchema.safeParse({
+      fullName: "A",
+      phone: "123",
+      email: "sai-email",
+      source: "",
+      programInterest: "",
+      status: "invalid",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      expect(fieldErrors.fullName).toContain("Họ tên phải có ít nhất 2 ký tự");
+      expect(fieldErrors.phone).toContain("Số điện thoại chưa hợp lệ");
+      expect(fieldErrors.email).toContain("Email chưa hợp lệ");
+      expect(fieldErrors.source).toContain("Vui lòng nhập nguồn lead");
+      expect(fieldErrors.programInterest).toContain("Vui lòng nhập chương trình quan tâm");
+      expect(fieldErrors.status).toBeTruthy();
+    }
+  });
+
+  it("accepts valid student request payloads and defaults status to open", () => {
+    const result = studentRequestSchema.safeParse({
+      studentId: 1,
+      requestType: "class_transfer",
+      title: "Xin chuyển sang lớp tối thứ 3-5",
+      description: "Em muốn chuyển sang lớp buổi tối để phù hợp lịch học ở trường.",
+      response: "",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe("open");
+      expect(result.data.response).toBe("");
+    }
+  });
+
+  it("rejects invalid student request payloads with field errors", () => {
+    const result = studentRequestSchema.safeParse({
+      studentId: 0,
+      requestType: "wrong_type",
+      title: "A",
+      description: "",
+      status: "unknown",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      expect(fieldErrors.studentId).toContain("Vui lòng chọn học viên");
+      expect(fieldErrors.requestType).toBeTruthy();
+      expect(fieldErrors.title).toContain("Tiêu đề yêu cầu phải có ít nhất 2 ký tự");
+      expect(fieldErrors.description).toContain("Vui lòng nhập nội dung yêu cầu");
+      expect(fieldErrors.status).toBeTruthy();
+    }
   });
 });

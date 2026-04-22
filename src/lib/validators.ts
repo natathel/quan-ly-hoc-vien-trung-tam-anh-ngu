@@ -8,6 +8,9 @@ export const attendanceStatusSchema = z.enum(["present", "absent", "late", "excu
 export const assessmentTypeSchema = z.enum(["placement", "quiz", "midterm", "final", "speaking", "writing"]);
 export const invoiceStatusSchema = z.enum(["draft", "issued", "partially_paid", "paid", "overdue", "void"]);
 export const paymentMethodSchema = z.enum(["cash", "bank_transfer", "card", "e_wallet"]);
+export const leadStatusSchema = z.enum(["new", "contacted", "trial_scheduled", "converted", "lost"]);
+export const studentRequestTypeSchema = z.enum(["class_transfer", "schedule_change", "tuition", "academic", "support"]);
+export const studentRequestStatusSchema = z.enum(["open", "in_progress", "resolved", "closed"]);
 
 const dateString = z
   .string()
@@ -113,4 +116,23 @@ export const paymentSchema = z.object({
   method: paymentMethodSchema.default("cash"),
   referenceNo: z.string().trim().optional().default(""),
   note: z.string().trim().optional().default(""),
+});
+
+export const leadSchema = z.object({
+  fullName: z.string().trim().min(2, "Họ tên phải có ít nhất 2 ký tự"),
+  phone: z.string().trim().min(8, "Số điện thoại chưa hợp lệ"),
+  email: z.string().trim().email("Email chưa hợp lệ"),
+  source: z.string().trim().min(1, "Vui lòng nhập nguồn lead"),
+  programInterest: z.string().trim().min(1, "Vui lòng nhập chương trình quan tâm"),
+  status: leadStatusSchema.default("new"),
+  note: z.string().trim().optional().default(""),
+});
+
+export const studentRequestSchema = z.object({
+  studentId: z.coerce.number().int().positive("Vui lòng chọn học viên"),
+  requestType: studentRequestTypeSchema,
+  title: z.string().trim().min(2, "Tiêu đề yêu cầu phải có ít nhất 2 ký tự"),
+  description: z.string().trim().min(1, "Vui lòng nhập nội dung yêu cầu"),
+  status: studentRequestStatusSchema.default("open"),
+  response: z.string().trim().optional().default(""),
 });
